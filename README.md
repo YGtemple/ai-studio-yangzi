@@ -1,202 +1,83 @@
-# AI STUDIO 洋子 V3.3.1 · AI 影视全流程课程包
+<div align="right">
 
-> 一句话简介：一套面向本地 Agent 的 AI 影视创作 Skill 工程包，11 个专业 Skill + 项目模板 + 跨平台安装脚本，覆盖从概念到成片的完整链路。
+**[English](README.md)** · [简体中文](README.zh-CN.md)
 
-## 一、这是什么
+</div>
 
-这不是给真人看的教程，而是**给 AI Agent 读的工作指令包**。
+# ai-studio-yangzi
 
-把它交给任何具备本地文件读写权限的 Agent（Codex、豆包工作模式、千问工作台、OpenCode 等），说一句「安装这套 AI 影视课程包」，Agent 就会按照包内的 `AGENTS.md` 把自己配置成一名分阶段协作的 AI 影视制片——能从一句创意开始，一路做到分镜表和视频生成提示词。
+Eleven production skills for AI film-making, plus project templates and cross-platform install scripts.
 
-核心设计是**单包通用**：不区分「Codex 版」和「通用版」，一个文件夹覆盖所有平台。也不需要用户手工复制 Skill 文件。
+<sub>Skills · project template · 8-stage pipeline</sub>
 
-## 二、核心架构：阶段路由 + 单 Skill 激活
+---
 
-整个系统最关键的设计在 `skills/ai-film-router/SKILL.md`——它是总控，**不是强制流水线**。
+## What this is
 
-### 首次入口门禁
+A skill bundle for a local AI agent doing film work. Each skill covers one stage of production and can be used alone or chained.
 
-第一次启动电影项目时，先判断用户属于哪一种入口，只问一次：
-
-```text
-A. 从零开始创作
-B. 已有完整标准剧本
-C. 已有大纲、角色或部分剧本
-D. 高手镜头优化：只优化 Lira、ACTING 或 CINEDANCE
+```
+skills/             eleven skills, each one stage of the pipeline
+project-template/   a working project skeleton
+scripts/            install, upgrade, and knowledge-base setup
+课程文档/ 课程图片/   course material (Chinese)
 ```
 
-四种入口对应完全不同的路径：
+## The eight stages
 
-- **A 从零**：按概念 → 角色 →（可选）世界观 → 分场 → 剧本 → Lira → ACTING → CINEDANCE 推进
-- **B 剧本接管**：作者剧本是**锁定的最高事实来源**。先做接管检查报告，列出当前缺哪些生产资料，不能直接跳到下游，也不能把剧本里没有的资料当成已存在
-- **C 资料接力**：检查现有资料，只反馈当前目标真正缺的，**不强迫重跑已确认的阶段**
-- **D 镜头优化**：只处理用户点名的不满意的资产、表演或镜头
+```
+00 research → 01 story → 02 script → 03 assets
+→ 04 prompts → 05 storyboard → 06 video → 07 assembly
+```
 
-另外还有**修订模式**：后期发现上游问题时，主动切回指定阶段修复，再由用户决定哪些下游要重算。
+Each stage reads the previous stage's confirmed output and writes one versioned artifact. The rule is that a stage reads only the **confirmed current version** — no reading an earlier draft, no reading a sibling's working notes.
 
-### 一次只激活一个 Skill
+That single rule is what makes the pipeline restartable. If stage 05 goes wrong, reset to the last confirmed `04` and run again.
 
-这是整个系统的铁律：
+## The project template
 
-> 一次只执行一个 Skill，防止不同专业方法互相串味。
+`project-template/` is the directory skeleton every project starts from:
 
-没有用户的明确要求，当前 Skill 不得改掉其他阶段已确定的内容。用户已有足够资料时可以直接进入下游，不以「前序没跑完」为由强迫重做。
+```
+00_research/   01_story/   02_script/   03_assets/
+04_prompts/    05_storyboard/   06_video/   07_assembly/
+```
 
-### 最短路由原则
+Empty on purpose. The structure carries the convention; the content is per project.
 
-接管剧本后的下一步不是固定流程，而是**看当前场次真正缺什么**：
+## Scripts
 
-| 缺什么 | 调用 |
+| Script | Purpose |
 |---|---|
-| 角色、场景、道具资产 | `film-lira-assets` |
-| 对白语速、停顿、倾听、反应、复杂动作影响时长 | `film-acting` |
-| 已有最终剧本 + 时长初估 + 足够的资产和表演依据 | `film-cinedance` |
+| `新建AI影视项目.ps1` | scaffold a new project from the template |
+| `升级旧电影工程规则.ps1` | bring an older project up to the current rule set |
+| `安装课程包.ps1` | install the course bundle |
+| `install_course.py` | same, cross-platform |
+| `配置本地知识库.ps1` | point the agent at a local knowledge base |
+| `更新本地知识库.ps1` | refresh it |
 
-世界观始终是**可选项**——只有魔法、超能力、科幻技术、历史制度、复杂组织或特殊空间规则直接影响剧情时才补，不为普通现实题材强行创建世界观。
+The upgrade script exists because the rules change. Rather than leaving old projects silently out of date, it migrates them and reports what changed.
 
-### 全中文口令交互
+## Notes on scope
 
-用户不需要记命令。所有交互都是自然中文：
+The skills assume you supply the models; nothing here calls a hosted API. Research, script and storyboard work is text. Asset and video stages hand off to whatever generator you have configured.
 
-```text
-从零开始：我要做一部60秒竖屏悬疑AI短片。
-已有完整剧本：以我上传的作者剧本为最高依据，先做接管检查，不改剧情。
-高手镜头优化：只处理我点名的资产，先提建议，不要直接修改。
-回到剧本阶段：修复第 8 场逻辑，先不要重做下游。
-```
+A worked example of all eight stages in practice — with a real film's artifacts — is in [ai-film-production](https://github.com/YGtemple/ai-film-production) and [ai-drama-master-suite](https://github.com/YGtemple/ai-drama-master-suite).
 
-明确禁止要求学员输入 `$ai-film-router`、斜杠命令或英文阶段名。
-
-## 三、11 个 Skill
-
-| Skill | 职责 | 文件数 |
-|---|---|---|
-| `ai-film-router` | 阶段总控与路由 | 17 |
-| `film-synopsis` | 概念 / 故事梗概 | 2 |
-| `film-characters` | 角色设计 | 2 |
-| `film-worldbuilding` | 世界观（可选） | 2 |
-| `film-treatment` | 分场大纲 | 2 |
-| `film-screenplay` | 剧本 | 2 |
-| `film-lira-assets` | 资产生成 | 3 |
-| `film-acting` | 表演节拍 | 2 |
-| `film-cinedance` | 镜头设计 + 提示词 | 7 |
-| `film-expert-bridge` | 专家知识桥（含徒手技法/情绪表达等资料库） | 174 |
-| `film-knowledge-bridge` | 本地知识库外挂 | 12 |
-
-`film-expert-bridge` 和 `film-knowledge-bridge` 都是**可选外挂**，按需启用。
-
-### 视频提示词模型
-
-进入 08 阶段后可选三种模型，各自有独立的提示词结构适配器：
-
-- **Seedance 2.5**：可按确认的镜头方案使用多参考与最长 30 秒生成单元
-- **Seedance 2.0**：保留原版提示词结构
-- **MiniMax H3**：保留 H3 提示词结构
-
-需要对比时，可以让系统把同一个已确认镜头分别输出两种格式——但这不算第四种模型。
-
-## 四、版本保护机制
-
-V3.3.1 热修版针对多轮迭代最容易出的三个问题做了设计：
-
-**1. 聊天与登记分离**。聊天负责讨论，正式成果以本地登记的最新确认版本为准。同一阶段继续修改时保留草稿与确认稿；进入下一阶段只读取「已确认-当前」。
-
-**2. 镜头清单联动**。08 阶段按场次保存镜头清单、连续性、关键帧和提示词。镜头清单更新确认后，**旧提示词禁止继续使用**，只重做受影响的镜头。
-
-**3. 项目写入锁**。同一个电影项目不要同时交给两个 Agent 写入，系统用写入锁避免版本号相撞。
-
-V3.3.1 相比 V3.3 修掉的两个真实兼容问题：
-
-- 旧项目升级时因缺少项目状态模板而中断、留下写了一半的新规则
-- Windows PowerShell 5.1 按系统编码读取中文脚本导致内容异常或匹配失败
-
-另外补了一个保护：已有 `artifact-state.json` 即使没有版本字段，也会保留既有登记、只补写版本号，不会被当作无效文件覆盖。
-
-## 五、项目模板
-
-`project-template/` 预置了电影项目的完整目录骨架：
-
-```
-project-template/
-├── AGENTS.md                    # 项目级指令
-├── 00_inbox/                    # 素材入口
-├── 00_project/                  # 制片管理（登记表/状态/路由）
-│   ├── artifact-registry.md     # 成果登记表
-│   ├── artifact-state.json      # 机器可读状态
-│   ├── brief.md                 # 项目简报
-│   ├── routing.md               # 路由表
-│   ├── reference-memory.md      # 参考方法记忆
-│   ├── scene-registry-template.md   # 场次登记模板
-│   └── session-checkpoint.md    # 会话检查点
-├── 01_story/                    # 故事
-├── 02_script/                   # 剧本
-├── 03_assets/                   # 资产
-├── 04_performance/              # 表演
-├── 05_shots/                    # 镜头（含 keyframes/）
-├── 06_prompts/                  # 提示词
-├── 07_generations/              # 生成结果
-└── 08_delivery/                 # 交付
-```
-
-新建项目用 `scripts/新建AI影视项目.ps1`，只问一次「电影项目标题是什么」，不要求小白填磁盘路径，默认保存在当前用户「文档」目录下。
-
-## 六、跨平台安装与本地知识库
-
-### 安装
-
-| 平台 | 命令 |
-|---|---|
-| Windows | `scripts/安装课程包.ps1` |
-| macOS / Linux | `python3 scripts/install_course.py` |
-
-安装后自动检查 11 个 Skill 文件夹及各自的 `SKILL.md` 是否存在。发现同名旧版本会**先备份再更新**，不会直接覆盖。
-
-没有全局 Skill 机制的环境（如部分 OpenCode 配置），不伪造安装成功，改为项目内直接读取模式——从 `skills/ai-film-router/SKILL.md` 开始按路由读取。
-
-### 本地知识库（可选外挂）
-
-配置一次，同一台电脑上所有电影项目共用：
+## Install
 
 ```powershell
-# Windows
-scripts/配置本地知识库.ps1 -KnowledgeRoot "所选路径"
-
-# macOS / Linux
-python3 skills/film-knowledge-bridge/scripts/configure_knowledge_base.py "所选路径"
+.\scripts\安装课程包.ps1
 ```
 
-配置成功后用户会被告知：该电脑上所有电影项目都会自动共用，不需要重复选择。知识库可放在任意盘符、外接硬盘或 Mac 文件夹，不存在固定盘符要求。
+Or with Python:
 
-更新时做**增量索引**，只处理新增或修改过的 PDF / Word / Markdown / TXT，不重复处理未变化文件，并在聊天里报告扫描数、新增数、更新数、未变化数、失败数和报告路径。扫描版 PDF 无文字时明确提示需要 OCR，**不声称成功入库**。
-
-需要说明的是：这是扩充本机可检索资料，不是训练或修改大模型。
-
-## 七、文件结构
-
-```
-AI STUDIO洋子-V3.3.1-热修版/
-├── AGENTS.md                       # 安装总控（Agent 的入口指令）
-├── 00-开始使用.md                  # 学员使用说明（新/老学员分流）
-├── V3.3.1-热修说明.md              # 本次修复内容
-├── project-template/               # 电影项目模板（18 文件）
-├── scripts/                        # 跨平台安装与知识库脚本
-│   ├── 安装课程包.ps1 / .command
-│   ├── 配置本地知识库.ps1 / .command
-│   ├── 更新本地知识库.ps1 / .command
-│   ├── 新建AI影视项目.ps1
-│   ├── 升级旧电影工程规则.ps1
-│   └── install_course.py           # Python 跨平台安装器
-├── 课程文档/                       # 学员手册、录播教案、71 项技能融合调用表
-├── 课程图片/                       # 课程录屏（技能融合调用表 6 张）
-└── skills/                         # 11 个 Skill
+```bash
+python scripts/install_course.py
 ```
 
-## 八、规模与来源
+Getting started is documented in `00-开始使用.md`.
 
-- **总文件数**：267 个（skills/ 225、project-template/ 18、scripts/ 10、课程文档 + 课程图片 11、根目录 3）
-- **总体积**：约 4.7 MB（最大文件是 0.49 MB 的课程图片，无音视频）
-- 多名贡献者的 50 多套 Skill 工作流被深度融合成 **71 个可选技能分支**（完整用途表见 `课程文档/03-71项技能融合调用表.md`）。注意这是 71 个**分支**，不是 71 个独立安装的 Skill。
+## License
 
-## 许可证
-
-MIT License
+MIT
